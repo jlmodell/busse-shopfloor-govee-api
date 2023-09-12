@@ -39,8 +39,8 @@ assert imap_host != "", "imap_host is empty"
 assert imap_email != "", "imap_email is empty"
 assert imap_password != "", "imap_password is empty"
 
-test_keys = ["RECEIVING"]
-ids = config["ids"] or {}
+test_keys = ["14"]
+ids = {str(k): v for k,v in config["ids"].items()}
 assert len(ids) > 0, "ids is empty"
 assert all([k in ids for k in test_keys]), f"ids is missing one of {test_keys}"
 
@@ -62,9 +62,9 @@ OFF = "off"
 # ids are set in shopfloor
 ANDONS = {
     "14": {
-        "id": ids["RECEIVING"],
+        "id": ids["14"],
         "name": "RECEIVING",
-        "state": None,
+        "state": OFF,
         "last_changed": None,
     },
 }
@@ -184,23 +184,18 @@ async def checker_hook(andon_id: str):
 
                     if re.search(rf"^{andon_id}", subject, re.IGNORECASE):
                         if re.search(r"ON$", subject, re.IGNORECASE):
-                            if ANDONS[andon_id]["state"] == None:
-                                ANDONS[andon_id]["state"] = ON
-                                return ANDONS[andon_id]
-
                             if ANDONS[andon_id]["state"] == ON:
                                 return ANDONS[andon_id]
                             
                             await interact_with_govee_api(andon_id, ANDONS[andon_id]["id"], ON)
+
                             return ANDONS[andon_id]
                         else:
-                            if ANDONS[andon_id]["state"] == None:
-                                ANDONS[andon_id]["state"] = OFF
-                                return ANDONS[andon_id]
                             if ANDONS[andon_id]["state"] == OFF:
                                 return ANDONS[andon_id]
                             
                             await interact_with_govee_api(andon_id, ANDONS[andon_id]["id"], OFF)
+                            
                             return ANDONS[andon_id]
                     
 
