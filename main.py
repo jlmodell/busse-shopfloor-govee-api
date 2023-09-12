@@ -1,12 +1,8 @@
 import httpx
-# import asyncio
 from rich import print
 import yaml
 from fastapi import FastAPI, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from apscheduler.schedulers.background import BackgroundScheduler
 import imaplib
 import email
 from email.header import decode_header
@@ -14,6 +10,7 @@ import re
 from datetime import datetime
 import sys
 import json
+
 
 DEBUG = sys.argv[-1] == "debug"
 
@@ -24,12 +21,15 @@ def init_config():
 
     return load
 
+
 config = init_config()
+
 
 base_url = config["base_url"] or ""
 api_key = config["api_key"] or ""
 assert base_url != "", "base_url is empty"
 assert api_key != "", "api_key is empty"
+
 
 imap_host = config["imap"]["host"] or ""
 imap_port = config["imap"]["port"] or 993
@@ -39,25 +39,21 @@ assert imap_host != "", "imap_host is empty"
 assert imap_email != "", "imap_email is empty"
 assert imap_password != "", "imap_password is empty"
 
+
 test_keys = ["14"]
 ids = {str(k): v for k,v in config["ids"].items()}
 assert len(ids) > 0, "ids is empty"
 assert all([k in ids for k in test_keys]), f"ids is missing one of {test_keys}"
 
+
 discord_webhook_url = config["discord"]["webhook_url"] or ""
 assert discord_webhook_url != "", "discord_webhook_url is empty"
 
-if DEBUG:
-    print(imap_host)
-    print(imap_port)
-    print(imap_email)
-    print(imap_password)
-    print(ids)
-    print(discord_webhook_url)
 
 # constants
 ON = "on"
 OFF = "off"
+
 
 # ids are set in shopfloor
 ANDONS = {
@@ -68,6 +64,7 @@ ANDONS = {
         "last_changed": None,
     },
 }
+
 
 async def govee_info():
     global DEBUG
@@ -95,6 +92,7 @@ async def govee_info():
             print(status)
     
     return status
+
 
 async def discord_notification(andon_id: str, cmd: str, result: dict) -> None:
     global DEBUG, ANDONS, discord_webhook_url
@@ -195,15 +193,12 @@ async def checker_hook(andon_id: str):
                                 return ANDONS[andon_id]
                             
                             await interact_with_govee_api(andon_id, ANDONS[andon_id]["id"], OFF)
-                            
+
                             return ANDONS[andon_id]
-                    
-
-                        
-
 
 
 app = FastAPI()
+
 
 @app.on_event("startup")
 async def hooks():
@@ -219,9 +214,11 @@ async def hooks():
 
     scheduler.start()
 
+
 @app.get("/")
 async def root():
     return await govee_info()
+
 
 @app.get("/andon/{andon_id}")
 async def andon(andon_id: str):
@@ -231,6 +228,7 @@ async def andon(andon_id: str):
         raise HTTPException(status_code=404, detail=f"Andon {andon_id} not found")
 
     return ANDONS.get(andon_id, None)
+
 
 @app.post("/andon/{andon_id}")
 async def andon_interaction(andon_id: str, cmd: str):
@@ -247,8 +245,8 @@ async def andon_interaction(andon_id: str, cmd: str):
 
     return ANDONS.get(andon_id, None)
 
+
 if __name__ == "__main__":
-    # asyncio.run(govee_info())
     import uvicorn
 
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("main:app", host="0.0.0.0", port=8989, reload=True)
