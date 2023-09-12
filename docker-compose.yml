@@ -1,0 +1,9 @@
+version: "3.8"
+
+services:
+  govee_api:
+    container_name: busse-govee-api
+    build: .
+    ports:
+      - 8989:8989
+    restart: unless-stopped
