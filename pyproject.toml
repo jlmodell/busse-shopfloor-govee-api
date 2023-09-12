@@ -1,0 +1,20 @@
+[tool.poetry]
+name = "busse-shopfloor-govee-api"
+version = "0.1.0"
+description = "control govee lamps from shopfloor system"
+authors = ["Jeff Modell <jmodell@busseinc.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+black = "^23.9.1"
+fastapi = "^0.103.1"
+httpx = "^0.25.0"
+uvicorn = "^0.23.2"
+rich = "^13.5.2"
+pyyaml = "^6.0.1"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
