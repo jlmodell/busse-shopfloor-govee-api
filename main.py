@@ -227,7 +227,7 @@ async def andon(andon_id: str):
     if andon_id not in ANDONS:
         raise HTTPException(status_code=404, detail=f"Andon {andon_id} not found")
 
-    return ANDONS.get(andon_id, None)
+    return ANDONS[andon_id]
 
 
 @app.post("/andon/{andon_id}")
@@ -243,7 +243,7 @@ async def andon_interaction(andon_id: str, cmd: str):
     await interact_with_govee_api(andon_id, ANDONS[andon_id]["id"], cmd)
     # await discord_notification(andon_id, cmd, {"status": "success"})
 
-    return ANDONS.get(andon_id, None)
+    return ANDONS[andon_id]
 
 
 if __name__ == "__main__":
