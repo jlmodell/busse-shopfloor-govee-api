@@ -40,10 +40,10 @@ assert imap_email != "", "imap_email is empty"
 assert imap_password != "", "imap_password is empty"
 
 
-test_keys = ["14"]
+ALL_KEYS = ["0", "14", "16", "17", "18", "19", "20", "21"]
 ids = {str(k): v for k,v in config["ids"].items()}
 assert len(ids) > 0, "ids is empty"
-assert all([k in ids for k in test_keys]), f"ids is missing one of {test_keys}"
+assert all([k in ids for k in ALL_KEYS]), f"ids is missing one of {ALL_KEYS}"
 
 
 discord_webhook_url = config["discord"]["webhook_url"] or ""
@@ -63,6 +63,48 @@ ANDONS = {
         "state": OFF,
         "last_changed": None,
     },
+    "0": {
+        "id": ids["0"],
+        "name": "OVIEDO001",
+        "state": OFF,
+        "last_changed": None,
+    },
+    "16": {
+        "id": ids["0"],
+        "name": "PARTS",
+        "state": OFF,
+        "last_changed": None,
+    },
+    "17": {
+        "id": ids["0"],
+        "name": "BOX",
+        "state": OFF,
+        "last_changed": None,
+    },
+    "18": {
+        "id": ids["0"],
+        "name": "DHR",
+        "state": OFF,
+        "last_changed": None,
+    },
+    "19": {
+        "id": ids["0"],
+        "name": "QC",
+        "state": OFF,
+        "last_changed": None,
+    },
+    "20": {
+        "id": ids["0"],
+        "name": "PKG",
+        "state": OFF,
+        "last_changed": None,
+    },
+    "21": {
+        "id": ids["0"],
+        "name": "WAREHOUSE_PARTS",
+        "state": OFF,
+        "last_changed": None,
+    },
 }
 
 
@@ -74,6 +116,8 @@ async def govee_info():
             base_url,
             headers={"Govee-API-Key": api_key, "Content-Type": "application/json"},  
         )
+
+        print(r.json())
 
         temp = r.json()
         devices = temp["data"]["devices"]
@@ -106,7 +150,7 @@ async def discord_notification(andon_id: str, cmd: str, result: dict) -> None:
         )
 
 
-async def interact_with_govee_api(id: str, device_id: str, cmd: str):
+async def interact_with_govee_api(id: str, device_id: str, cmd: str, model: str = "H6076"):
     global ON, OFF, DEBUG, ANDONS, api_key, base_url
 
     async with httpx.AsyncClient() as client:
@@ -115,7 +159,7 @@ async def interact_with_govee_api(id: str, device_id: str, cmd: str):
             headers={"Govee-API-Key": api_key, "Content-Type": "application/json"},
             json={
                 "device": device_id,
-                "model": "H6076",
+                "model": model if id == "14" else "H6052",
                 "cmd": {
                     "name": "turn",
                     "value": ON if cmd == ON else OFF,
@@ -132,20 +176,21 @@ async def interact_with_govee_api(id: str, device_id: str, cmd: str):
                 headers={"Govee-API-Key": api_key, "Content-Type": "application/json"},
                 json={
                     "device": device_id,
-                    "model": "H6076",
+                    "model": model if id == "14" else "H6052",
                     "cmd": {
                         "name": "color",
-                        "value": {"r": 255, "g": 191, "b": 0},
+                        "value": {"r": 108, "g": 189, "b": 69},
                     },
                 },
             )
+            print(s.json())
 
         ANDONS[id]["state"] = ON if cmd == ON else OFF
         ANDONS[id]["last_changed"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     
 
 async def checker_hook(andon_id: str):
-    global DEBUG, ON, OFF, ANDONS
+    global DEBUG, ON, OFF, ANDONS, ALL_KEYS
 
     if andon_id not in ANDONS:
         raise HTTPException(status_code=404, detail=f"Andon {andon_id} not found")
@@ -197,18 +242,72 @@ async def checker_hook(andon_id: str):
                             return ANDONS[andon_id]
 
 
+async def checker_loop():
+    for key in ALL_KEYS:
+        await checker_hook(key)
+
 app = FastAPI()
 
 
 @app.on_event("startup")
 async def hooks():
-    await checker_hook("14")
+    # await checker_hook("14")
+    # await checker_hook("16")
+    # await checker_hook("17")
+    # await checker_hook("18")
+    # await checker_hook("19")
+    # await checker_hook("20")
+    # await checker_hook("21")
+
+    await checker_loop()
 
     scheduler = AsyncIOScheduler()
+    # scheduler.add_job(
+    #     func=checker_hook,
+    #     trigger="interval",
+    #     args=["14"],
+    #     seconds=30,
+    # )
+    # scheduler.add_job(
+    #     func=checker_hook,
+    #     trigger="interval",
+    #     args=["16"],
+    #     seconds=30,
+    # )
+    # scheduler.add_job(
+    #     func=checker_hook,
+    #     trigger="interval",
+    #     args=["17"],
+    #     seconds=30,
+    # )
+    # scheduler.add_job(
+    #     func=checker_hook,
+    #     trigger="interval",
+    #     args=["18"],
+    #     seconds=30,
+    # )
+    # scheduler.add_job(
+    #     func=checker_hook,
+    #     trigger="interval",
+    #     args=["19"],
+    #     seconds=30,
+    # )
+    # scheduler.add_job(
+    #     func=checker_hook,
+    #     trigger="interval",
+    #     args=["20"],
+    #     seconds=30,
+    # )
+    # scheduler.add_job(
+    #     func=checker_hook,
+    #     trigger="interval",
+    #     args=["21"],
+    #     seconds=30,
+    # )
+
     scheduler.add_job(
-        func=checker_hook,
+        func=checker_loop,
         trigger="interval",
-        args=["14"],
         seconds=30,
     )
 
